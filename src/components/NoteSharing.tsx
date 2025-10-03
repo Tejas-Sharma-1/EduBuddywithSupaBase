@@ -20,6 +20,16 @@ export function NoteSharing() {
     '4th Year': ['7th', '8th'],
   };
 
+  // Branches/Streams list
+  const branches = [
+    'Computer Science',
+    'Textile Chemistry',
+    'Textile Technology',
+    'Electronics',
+    'Fashion Designing',
+  ];
+  const [openBranch, setOpenBranch] = useState<string | null>(null);
+
   // Load notes from Supabase on component mount
   useEffect(() => {
     loadNotes();
@@ -126,6 +136,15 @@ export function NoteSharing() {
       note.year.toLowerCase().includes(searchTerm) ||
       note.semester.toLowerCase().includes(searchTerm)
     );
+  });
+
+  // Group notes by branch/stream (subject)
+  const notesByBranch: Record<string, Note[]> = {};
+  notes.forEach(note => {
+    if (!notesByBranch[note.subject]) {
+      notesByBranch[note.subject] = [];
+    }
+    notesByBranch[note.subject].push(note);
   });
 
   return (
@@ -305,57 +324,70 @@ export function NoteSharing() {
           />
         </div>
 
-        {/* Notes List */}
+        {/* Branches as clickable categories (collapsible) */}
         <div className="space-y-4">
-          {filteredNotes.length === 0 ? (
-            <div className="text-center text-gray-400 py-8">
-              <BookOpen size={48} className="mx-auto mb-4 opacity-50" />
-              <p>No notes found. Be the first to share your notes!</p>
+          {branches.map(branch => (
+            <div key={branch} className="border border-gray-700 rounded-lg">
+              <button
+                className="w-full flex justify-between items-center px-4 py-3 bg-gray-800 hover:bg-gray-700 text-left text-blue-400 font-bold text-lg rounded-lg focus:outline-none transition-colors"
+                onClick={() => setOpenBranch(openBranch === branch ? null : branch)}
+                aria-expanded={openBranch === branch}
+              >
+                <span>{branch}</span>
+                <span>{openBranch === branch ? '▲' : '▼'}</span>
+              </button>
+              {openBranch === branch && (
+                <div className="p-4 space-y-4 bg-gray-750">
+                  {(notesByBranch[branch] && notesByBranch[branch].length > 0) ? (
+                    notesByBranch[branch].map(note => (
+                      <div key={note.id} className="border border-gray-700 rounded-lg p-4 bg-gray-800 hover:bg-gray-700 transition-colors flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-bold text-white text-lg">{note.title}</h4>
+                          <p className="text-gray-400 mt-2">{note.description}</p>
+                          <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-gray-400">
+                            <span className="flex items-center gap-1">
+                              <BookOpen size={16} />
+                              {note.subject}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Calendar size={16} />
+                              {note.uploadDate.toLocaleDateString()}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <User size={16} />
+                              {note.uploadedBy}
+                            </span>
+                            <span className="bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full text-sm whitespace-nowrap">
+                              {note.year}
+                            </span>
+                            <span className="bg-purple-600/20 text-purple-400 px-3 py-1 rounded-full text-sm whitespace-nowrap">
+                              {note.semester} Semester
+                            </span>
+                            <span className="bg-green-600/20 text-green-400 px-3 py-1 rounded-full text-sm whitespace-nowrap">
+                              {note.category}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="mt-4 sm:mt-0 sm:ml-4 flex-shrink-0">
+                          <a
+                            href={note.fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors"
+                          >
+                            <Download size={16} />
+                            Download Notes
+                          </a>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-gray-400 text-center py-4">No notes found for this branch.</div>
+                  )}
+                </div>
+              )}
             </div>
-          ) : (
-            filteredNotes.map((note) => (
-              <div key={note.id} className="border border-gray-700 rounded-lg p-4 bg-gray-750 hover:bg-gray-700 transition-colors flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex-1">
-                  <h3 className="font-bold text-white text-lg">{note.title}</h3>
-                  <p className="text-gray-400 mt-2">{note.description}</p>
-                  <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-gray-400">
-                    <span className="flex items-center gap-1">
-                      <BookOpen size={16} />
-                      {note.subject}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Calendar size={16} />
-                      {note.uploadDate.toLocaleDateString()}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <User size={16} />
-                      {note.uploadedBy}
-                    </span>
-                    <span className="bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full text-sm whitespace-nowrap">
-                      {note.year}
-                    </span>
-                    <span className="bg-purple-600/20 text-purple-400 px-3 py-1 rounded-full text-sm whitespace-nowrap">
-                      {note.semester} Semester
-                    </span>
-                    <span className="bg-green-600/20 text-green-400 px-3 py-1 rounded-full text-sm whitespace-nowrap">
-                      {note.category}
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-4 sm:mt-0 sm:ml-4 flex-shrink-0">
-                  <a
-                    href={note.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors"
-                  >
-                    <Download size={16} />
-                    Download Notes
-                  </a>
-                </div>
-              </div>
-            ))
-          )}
+          ))}
         </div>
       </div>
     </div>
